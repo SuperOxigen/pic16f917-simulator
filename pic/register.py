@@ -66,7 +66,7 @@ class Register(object):
 
     def getBit(self, pos: int) -> int:
         if pos >= pos and pos < self.size * 8:
-            self.value = 0 if (self.value & (self.maxValue - 2**)) == 0 else 1
+            self.value = 0 if (self.value & (self.maxValue - 2**pos)) == 0 else 1
 
     def setBits(self, poses: [int]) -> int:
         for pos in poses:
@@ -111,3 +111,24 @@ class UnimplementedRegister(Register):
     @value.setter
     def value(self, _):
         pass
+
+class NamedBitRegister(Register):
+    def __init__(self, name: str,
+                 bitNames: [str],
+                 size: int=1,
+                 special: bool=True):
+        super().__init__(name=name, size=size, special=special)
+
+        self._nameMap = {}
+        for i in range(bitNames):
+            if bitNames[i] is not None:
+                self._nameMap[bitNames[i]] = (self.size * 8 - i - 1)
+
+    def setNamedBit(self, name: str):
+        self.setBit(self._nameMap[name])
+
+    def getNamedBit(self, name: str) -> int:
+        return self.getBit(self._nameMap[name])
+
+    def clearNamedBit(self, name: str):
+        self.clearBit(self._nameMap[name])
