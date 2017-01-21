@@ -1,10 +1,8 @@
 
-DEFAULT_REGISTER_BANK_SIZE = 0x7F
-
 class RegisterBank(object):
     def __init__(self,
                  registers: list,
-                 size: int=DEFAULT_REGISTER_BANK_SIZE):
+                 size: int):
 
         self._registers = [None]*size
         self._size = size
@@ -38,7 +36,20 @@ class RegisterBank(object):
     def getNamedRegister(self, name: str):
         return self._nameMap.get(name, None)
 
-class RunningMemory(object):
+class FileMemory(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, banks: list, fsrReg):
+        self._fsrRegister = fsr
+        self._banks = banks
+
+    @property
+    def fsrRegister(self):
+        return self._fsrRegister
+
+    @property
+    def banks(self) -> list:
+        return self._banks
+
+    def getRegister(self, bankIdx: int, addr: int):
+        bank = self.banks[bankIdx]
+        return bank.registers[addr % bank.size]
