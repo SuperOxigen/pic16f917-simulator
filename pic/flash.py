@@ -14,4 +14,4 @@ class ProgramMemory(object):
         return self._programCounter
 
     def nextOp(self):
-        return self.operations[self.programCounter.value]
+        return self.operations[self.programCounter.address]
