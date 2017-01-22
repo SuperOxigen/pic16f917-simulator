@@ -371,4 +371,127 @@ class Call(OpCode):
         self.stack.push(self.literal.value)
         return 2
 
+class Clrf(OpCode):
+    def __init__(self, register, statusReg):
+        super().__init__(name="CLRF")
+        self._register = register
+        self._statusRegister = statusReg
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def statusRegister(self):
+        return self._statusRegister
+
+    def __str__(self) -> str:
+        return "{name} {file}".format(name=self.name, file=self.register.name)
+
+    def execute(self) -> int:
+        self.register.clear()
+        self.statusRegister.setNamedBit("Z")
+
+        return 1
+
+class Clrw(OpCode):
+    def __init__(self, workingReg, statusReg):
+        super().__init__(name="CLRF")
+        self._workingRegister = workingReg
+        self._statusRegister = statusReg
+
+    @property
+    def workingRegister(self):
+        return self._workingRegister
+
+    @property
+    def statusRegister(self):
+        return self._statusRegister
+
+    def __str__(self) -> str:
+        return self.name
+
+    def execute(self) -> int:
+        self.workingRegister.clear()
+        self.statusRegister.setNamedBit("Z")
+
+        return 1
+
+class Clrwdt(OpCode):
+    def __init__(self, watchdogReg, optionReg, statusReg):
+        super().__init__(name="CLRWDT")
+        self._watchdogRegister = watchdogReg
+        self._optionRegister = optionReg
+        self._statusRegister = statusReg
+
+    @property
+    def watchdogRegister(self):
+        return self._watchdogRegister
+
+    @property
+    def optionRegister(self):
+        return self._optionRegister
+
+    @property
+    def statusRegister(self):
+        return self._statusRegister
+
+    def __str__(self) -> str:
+        return self.name
+
+    def execute(self) -> int:
+        self.watchdogRegister.value = 0
+        self.optionRegister.clearNamedBit("PS0")
+        self.optionRegister.clearNamedBit("PS1")
+        self.optionRegister.clearNamedBit("PS2")
+
+        self.statusRegister.setNamedBit("TO")
+        self.statusRegister.setNamedBit("PD")
+
+        return 1
+
+class Comf(OpCode):
+    def __init__(self, register, storeToFile: bool, workingReg, statusReg):
+        super().__init__(name="COMF")
+        self._register = register
+        self._storeToFile = storeToFile
+        self._workingRegister = workingReg
+        self._statusRegister = statusReg
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def storeToFile(self) -> bool:
+        return self._storeToFile
+
+    @property
+    def destinationRegister(self):
+        return self.register if self.storeToFile else self.workingRegister
+
+    @property
+    def statusRegister(self):
+        return self._statusRegister
+
+    @property
+    def workingRegister(self):
+        return self._workingRegister
+
+    def __str__(self) -> str:
+        return ("{name} {file},"
+                "{dest}".format(name=self.name,
+                                file=self.register.name,
+                                dest="F" if self.storeToFile else "W"))
+
+    def execute(self) -> int:
+        newValue = self.register.maxValue - self.register.value
+        self.destinationRegister.value = newValue
+
+        if newValue == 0:
+            self.statusRegister.setNamedBit("Z")
+        else:
+            self.statusRegister.clearNamedBit("Z")
+
+        return 1
 #
