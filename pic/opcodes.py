@@ -271,4 +271,104 @@ class Bsf(OpCode):
 
         return 1
 
+class Btfsc(OpCode):
+    def __init__(self, register, position, programCounter):
+        super().__init__(name="BFTSC")
+        self._register = register
+        self._position = position
+        self._programCounter = programCounter
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def position(self):
+        return self._position
+
+    @property
+    def programCounter(self):
+        return self._programCounter
+
+    def isNamedBit(self) -> bool:
+        return isinstance(self.position, str)
+
+    def __str__(self) -> str:
+        return "{name} {file},{pos}".format(name=self.name,
+                                            file=self.register.name,
+                                            pos=self.position)
+
+    def execute(self) -> int:
+        if self.isNamedBit():
+            bitValue = self.register.getNamedBit(self.position)
+        else:
+            bitValue = self.register.getBit(self.position)
+
+        if bitValue == 0:
+            self.programCounter.inc()
+            return 2
+
+        return 1
+
+class Btfss(OpCode):
+    def __init__(self, register, position, programCounter):
+        super().__init__(name="BFTSS")
+        self._register = register
+        self._position = position
+        self._programCounter = programCounter
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def position(self):
+        return self._position
+
+    @property
+    def programCounter(self):
+        return self._programCounter
+
+    def isNamedBit(self) -> bool:
+        return isinstance(self.position, str)
+
+    def __str__(self) -> str:
+        return "{name} {file},{pos}".format(name=self.name,
+                                            file=self.register.name,
+                                            pos=self.position)
+
+    def execute(self) -> int:
+        if self.isNamedBit():
+            bitValue = self.register.getNamedBit(self.position)
+        else:
+            bitValue = self.register.getBit(self.position)
+
+        if bitValue == 1:
+            self.programCounter.inc()
+            return 2
+
+        return 1
+
+class Call(OpCode):
+    def __init__(self, literal, stack):
+        super().__init__(name="CALL")
+        self._literal = literal
+        self._stack = stack
+
+    @property
+    def literal(self):
+        return self._literal
+
+    @property
+    def stack(self):
+        return self._stack
+
+    def __str__(self) -> str:
+        return "{name} 0x{address:03x}".format(name=self.name,
+                                               address=self.literal.value)
+
+    def execute(self) -> int:
+        self.stack.push(self.literal.value)
+        return 2
+
 #
