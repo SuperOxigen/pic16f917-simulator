@@ -715,4 +715,86 @@ class Incfsz(OpCode):
 
         return 1
 
+class IOrLw(OpCode):
+    def __init__(self, literal, workingReg, statusReg):
+        super().__init__(name="IORLW")
+        self._literal = literal
+        self._statusRegister = statusReg
+        self._workingRegister = workingReg
+
+    @property
+    def literal(self):
+        return self._literal
+
+    @property
+    def statusRegister(self):
+        return self._statusRegister
+
+    @property
+    def workingRegister(self):
+        return self._workingRegister
+
+    def __str__(self) -> str:
+        return "{name} {value}".format(name=self.name,
+                                       value=self.literal.value)
+
+    def execute(self) -> int:
+        oldValue = self.workingRegister.value
+        newValue = self.literal.value | oldValue
+
+        self.workingRegister.value = newValue
+
+        if newValue == 0:
+            self.statusRegister.setNamedBit("Z")
+        else:
+            self.statusRegister.clearNamedBit("Z")
+
+        return 1
+
+class IOrWF(OpCode):
+    def __init__(self, register, storeToFile: bool, workingReg, statusReg):
+        super().__init__(name="IORWF")
+        self._register = register
+        self._storeToFile = storeToFile
+        self._workingRegister = workingReg
+        self._statusRegister = statusReg
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def storeToFile(self) -> bool:
+        return self._storeToFile
+
+    @property
+    def destinationRegister(self):
+        return self.register if self.storeToFile else self.workingRegister
+
+    @property
+    def statusRegister(self):
+        return self._statusRegister
+
+    @property
+    def workingRegister(self):
+        return self._workingRegister
+
+    def __str__(self) -> str:
+        return ("{name} {file},"
+                "{dest}".format(name=self.name,
+                                file=self.register.name,
+                                dest="F" if self.storeToFile else "W"))
+
+    def execute(self) -> int:
+        newValue = self.register.value | self.workingRegister.value
+
+        self.destinationRegister.value = newValue
+
+        if newValue == 0:
+            self.statusRegister.setNamedBit("Z")
+        else:
+            self.statusRegister.clearNamedBit("Z")
+
+        return 1
+
 #
