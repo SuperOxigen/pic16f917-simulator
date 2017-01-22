@@ -494,4 +494,104 @@ class Comf(OpCode):
             self.statusRegister.clearNamedBit("Z")
 
         return 1
+
+class Decf(OpCode):
+    def __init__(self, register, storeToFile, workingReg, statusReg):
+        super().__init__(name="DECF")
+        self._register = register
+        self._storeToFile = storeToFile
+        self._workingRegister = workingReg
+        self._statusRegister = statusReg
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def storeToFile(self) -> bool:
+        return self._storeToFile
+
+    @property
+    def destinationRegister(self):
+        return self.register if self.storeToFile else self.workingRegister
+
+    @property
+    def statusRegister(self):
+        return self._statusRegister
+
+    @property
+    def workingRegister(self):
+        return self._workingRegister
+
+    def __str__(self) -> str:
+        return ("{name} {file},"
+                "{dest}".format(name=self.name,
+                                file=self.register.name,
+                                dest="F" if self.storeToFile else "W"))
+
+    def execute(self) -> int:
+        newValue = self.register.value - 1
+        if newValue < self.register.minValue:
+            newValue = self.register.maxValue
+
+        self.destinationRegister.value = newValue
+
+        if newValue == 0:
+            self.statusRegister.setNamedBit("Z")
+        else:
+            self.statusRegister.clearNamedBit("Z")
+
+        return 1
+
+class Decfsz(OpCode):
+    def __init__(self,
+                 register,
+                 storeToFile: bool,
+                 workingReg,
+                 programCounter):
+        super().__init__(name="DECFSZ")
+        self._register = register
+        self._storeToFile = storeToFile
+        self._workingRegister = workingReg
+        self._programCounter = programCounter
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def storeToFile(self) -> bool:
+        return self._storeToFile
+
+    @property
+    def destinationRegister(self):
+        return self.register if self.storeToFile else self.workingRegister
+
+    @property
+    def programCounter(self):
+        return self._programCounter
+
+    @property
+    def workingRegister(self):
+        return self._workingRegister
+
+    def __str__(self) -> str:
+        return ("{name} {file},"
+                "{dest}".format(name=self.name,
+                                file=self.register.name,
+                                dest="F" if self.storeToFile else "W"))
+
+    def execute(self) -> int:
+        newValue = self.register.value - 1
+        if newValue < self.register.minValue:
+            newValue = self.register.maxValue
+
+        self.destinationRegister.value = newValue
+
+        if newValue == 0:
+            self.programCounter.inc()
+            return 2
+
+        return 1
+
 #
