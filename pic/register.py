@@ -26,6 +26,8 @@ class Register(object):
     def value(self, value: int):
         if value >= self.minValue and value <= self.maxValue:
             self._value = value
+        elif value >= self.minValue:
+            self._value = (value & self.maxValue)
         else:
             raise ValueError("Register {name} cannot have a value of "
                              "0x{value:08X} - largest value is {max:08X}"
