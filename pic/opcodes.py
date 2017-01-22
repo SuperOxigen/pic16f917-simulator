@@ -594,4 +594,27 @@ class Decfsz(OpCode):
 
         return 1
 
+class Goto(OpCode):
+    def __init__(self, literal, programCounter):
+        super().__init__(name="GOTO")
+        self._literal = literal
+        self._programCounter = programCounter
+
+    @property
+    def literal(self):
+        return self._literal
+
+    @property
+    def programCounter(self):
+        return self._programCounter
+
+    def __str__(self) -> str:
+        return "{name} 0x{address:03x}".format(name=self.name,
+                                               address=self.literal.value)
+
+    def execute(self) -> int:
+        self.programCounter.value = self.literal.value
+        return 2
+
+
 #
