@@ -211,4 +211,64 @@ class AndWF(OpCode):
 
         return 1
 
+class Bcf(OpCode):
+    def __init__(self, register, position):
+        super().__init__(name="BCF")
+        self._register = register
+        self._position = position
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def position(self):
+        return self._position
+
+    def isNamedBit(self) -> bool:
+        return isinstance(self.position, str)
+
+    def __str__(self) -> str:
+        return "{name} {file},{pos}".format(name=self.name,
+                                            file=self.register.name,
+                                            pos=self.position)
+
+    def execute(self) -> int:
+        if self.isNamedBit():
+            self.register.clearNamedBit(self.position)
+        else:
+            self.register.clearBit(self.position)
+
+        return 1
+
+class Bsf(OpCode):
+    def __init__(self, register, position):
+        super().__init__(name="BSF")
+        self._register = register
+        self._position = position
+
+    @property
+    def register(self):
+        return self._register
+
+    @property
+    def position(self):
+        return self._position
+
+    def isNamedBit(self) -> bool:
+        return isinstance(self.position, str)
+
+    def __str__(self) -> str:
+        return "{name} {file},{pos}".format(name=self.name,
+                                            file=self.register.name,
+                                            pos=self.position)
+
+    def execute(self) -> int:
+        if self.isNamedBit():
+            self.register.setNamedBit(self.position)
+        else:
+            self.register.setBit(self.position)
+
+        return 1
+
 #
