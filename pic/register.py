@@ -1,136 +1,136 @@
 
 class Register(object):
-    def __init__(self, name: str, size: int=1, special: bool=False):
-        self._value = 0
+    def __init__(self,
+                 bits: list,
+                 bitNames: list=None,
+                 defaultValue: int=0,
+                 writable: bool=True,
+                 name: str=None):
+
+        self._bits = bits[:]
+
+        self._bitNameMap = {}
+
+        if bitNames is not None:
+            for index, name in enumerate(bitNames):
+                if name is not None:
+                    self.bitNameMap[name] = self.bits[index]
+
+        self._writable = writable
         self._name = name
-        self._size = size
-        self._special = special
+        self._default = defaultValue & self.maxValue
+        self.value = self.default
 
     @property
     def name(self) -> str:
         return self._name
 
     @property
-    def size(self) -> int:
-        return self._size
+    def bits(self) -> list:
+        return self._bits
+
+    @property
+    def width(self) -> list:
+        return len(self.bits)
+
+    @property
+    def bitNameMap(self) -> dict:
+        return self._bitNameMap
+
+    @property
+    def default(self) -> int:
+        return self._default
 
     @property
     def value(self) -> int:
-        return self._value
+        value = 0
 
-    @property
-    def special(self) -> bool:
-        return self._special
+        for i in range(len(self.bits)):
+            value += self.bits[i].byteValue(i)
+
+        return value
 
     @value.setter
     def value(self, value: int):
-        if value >= self.minValue and value <= self.maxValue:
-            self._value = value
-        elif value >= self.minValue:
-            self._value = (value & self.maxValue)
-        else:
+        if value < self.minValue:
             raise ValueError("Register {name} cannot have a value of "
                              "0x{value:08X} - largest value is {max:08X}"
                              .format(name=self.name,
                                      value=value,
                                      max=self.maxValue))
+        if value > self.maxValue:
+            value = value & self.maxValue
+
+        for i in range(len(self.bits)):
+            self.bits[i].value = 0 if (value & 2**i) == 0 else 1
 
     @property
     def maxValue(self) -> int:
-        return 2**(self.size*8) - 1
+        return 2**self.width - 1
 
     @property
     def minValue(self) -> int:
         return 0
 
+    def isWritable(self) -> bool:
+        return self._writable
+
+    def set(self, value: int):
+        if self.isWritable():
+            self.value = value
+
     def clear(self):
-        self._value = 0
+        if self.isWritable():
+            self._value = 0
 
-    def setBit(self, pos: int):
-        if pos >= 0 and pos < self.size * 8:
-            self.value = (self.value | 2**pos)
-        else:
+    def reset(self):
+        self.value = self.default
+
+    def getBitByPos(self, pos: int) -> int:
+        if pos < 0 or pos >= self.width:
+            raise ValueError("Register {name} does not have a bit index of "
+                             "{value} - largest bit index is {max}"
+                             .format(name=self.name,
+                                     value=pos,
+                                     max=self.width - 1))
+        return self.bits[pos].value
+
+    def setBitByPos(self, pos: int):
+        if pos < 0 or pos >= self.width:
+            raise ValueError("Register {name} does not have a bit index of "
+                             "{value} - largest bit index is {max}"
+                             .format(name=self.name,
+                                     value=pos,
+                                     max=self.width - 1))
+        if self.isWritable():
+            self.bits[pos].set()
+
+    def clearBitByPos(self, pos: int):
+        if pos < 0 or pos >= self.width:
             raise ValueError("Register {name} does not have a bit index of "
                              "{value} - largest bit index is {max}"
                              .format(name=self.name,
                                      value=pos,
                                      max=self.size * 8 - 1))
+        if self.isWritable():
+            self.bits[pos].clear()
 
-    def clearBit(self, pos: int):
-        if pos >= 0 and pos < self.size * 8:
-            self.value = (self.value & (self.maxValue - 2**pos))
-        else:
-            raise ValueError("Register {name} does not have a bit index of "
-                             "{value} - largest bit index is {max}"
-                             .format(name=self.name,
-                                     value=pos,
-                                     max=self.size * 8 - 1))
+    def getBitByName(self, name: str) -> int:
+        if name not in self.bitNameMap:
+            raise ValueError("Register does not have a bit named {name}"
+                             .format(name=name))
+        return self.bitNameMap[name].value
 
-    def getBit(self, pos: int) -> int:
-        if pos >= pos and pos < self.size * 8:
-            self.value = 0 if (self.value & (self.maxValue - 2**pos)) == 0 else 1
+    def setBitByName(self, name: str):
+        if name not in self.bitNameMap:
+            raise ValueError("Register does not have a bit named {name}"
+                             .format(name=name))
+        if self.isWritable():
+            self.bitNameMap[name].set()
 
-    def setBits(self, poses: [int]) -> int:
-        for pos in poses:
-            self.setBit(pos)
-
-    def clearBits(self, poses: [int]):
-        for pos in poses:
-            self.clearBit(pos)
-
-    def getBits(self, poses: [int]) -> int:
-        minPos = min(poses)
-
-        for pos in poses:
-            if pos < 0 or pos >= self.size * 8:
-                raise ValueError("Register {name} does not have a bit index of "
-                                 "{value} - largest bit index is {max}"
-                                 .format(name=self.name,
-                                         value=pos,
-                                         max=self.size * 8 - 1))
-
-        return sum([(2**pos | self.value) for pos in (set(poses))]) >> minPOs
-
-class UnimplementedRegister(Register):
-    def __init__(self, size: int=1):
-        super().__init__("unimplemented", size=size, special=True)
-        zero = lambda _, *args: 0
-        none = lambda _, *args: None
-        self.clear = none
-        self.setBit = none
-        self.clearBits = none
-        self.getBit = zero
-        self.setBits = none
-        self.clearBits = none
-        self.getBits = zero
-
-    @property
-    def value(self) -> int:
-        return 0
-
-    # The following functions are intensionally set as pass.
-
-    @value.setter
-    def value(self, _):
-        pass
-
-class NamedBitRegister(Register):
-    def __init__(self, name: str,
-                 bitNames: [str],
-                 size: int=1,
-                 special: bool=True):
-        super().__init__(name=name, size=size, special=special)
-
-        self._nameMap = {}
-        for i in range(bitNames):
-            if bitNames[i] is not None:
-                self._nameMap[bitNames[i]] = (self.size * 8 - i - 1)
-
-    def setNamedBit(self, name: str):
-        self.setBit(self._nameMap[name])
-
-    def getNamedBit(self, name: str) -> int:
-        return self.getBit(self._nameMap[name])
-
-    def clearNamedBit(self, name: str):
-        self.clearBit(self._nameMap[name])
+    def clearBitByName(self, name: str):
+        if name not in self.bitNameMap:
+            raise ValueError("Register does not have a bit named {name}"
+                             .format(name=name))
+        if self.isWritable():
+            self.bitNameMap[name].clear()
