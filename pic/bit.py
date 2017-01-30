@@ -5,7 +5,7 @@ class Bit(object):
                  defaultValue: int=0,
                  writable: bool=True,
                  onSet=None, onClear=None, onReset=None, onChange=None):
-        self.default = defaultValue
+        self._default = defaultValue
         self.value = self.default
         self._writable = writable
 
